@@ -21,7 +21,7 @@ Properties
 		Pass
 		{
 			CGPROGRAM
-			#define SIGMA 30.0
+			#define SIGMA 20.0
 			#define BSIGMA 0.2 //reduce contrast
 			#define MSIZE 30
 			#pragma vertex vert
@@ -62,6 +62,7 @@ Properties
 
 
 		// Image abstraction with bilateral filter
+
 		float normpdf(float x, float sigma){
 			return 0.39894 * exp(-.5 * x * x/(sigma * sigma))/sigma; 
 		}
@@ -74,16 +75,23 @@ Properties
 
 			float3 col = c;
 			half kSize = (MSIZE - 1)/2;
-			float kernel[MSIZE];
+			
 			float3 finalCol = 0;
+			float Z = 0;
 
 			float space = 1.0/_TextureSize; 
 
-			// Compute the kernel
-			float Z = 0;
+			// // Compute the kernel
+			float kernel[MSIZE];
 			for (int j = 0; j<=kSize; j++){
 				kernel[kSize+j] = kernel[kSize -j] = normpdf(j, SIGMA);
 			}
+			
+			//Use a pre-compute kernal for sigma = 10.0 and msize = 15
+			// const float kernel[MSIZE] = {
+			// 	0.031225216, 0.033322271, 0.035206333, 0.036826804, 0.038138565, 0.039104044, 0.039695028,
+			// 	0.039894000, 0.039695028//, 0.039104044, 0.038138565, 0.036826804, 0.035206333, 0.033322271, 0.031225216
+			// };
 
 			float3 tempColor;
 			float factor;
@@ -121,7 +129,7 @@ Properties
 			// intensity on x and y direction
 			float GX = -1 * mc00 + mc20 + -2 * mc01 + 2 * mc21 - mc02 + mc22;
 			float GY = mc00 + 2 * mc10 + mc20 - mc02 - 2 * mc12 - mc22;
-			float result = length(float2(GX,GY));//length的内部算法就是灰度公式的算法，欧几里得长度
+			float result = length(float2(GX,GY));
 			return result;
 		}
 	
@@ -142,7 +150,7 @@ Properties
 
 			// Image abstraction
 			finalCol = bilateralFilter(color, newUV);
-
+			// finalCol = color;
 			// Turbulence flow: Low-frequency pigment separation due to uneven water density.
 			float turbFlowNoise = tex2D(_TurbulentFlowMap, IN.uv);
 			float density = 1 + _WaterEffect * (turbFlowNoise - 0.1);
